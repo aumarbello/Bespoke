@@ -1,4 +1,3 @@
-import 'package:bespoke/providers/product.dart';
 import 'package:bespoke/providers/products.dart';
 import 'package:bespoke/widgets/product_item.dart';
 import 'package:flutter/material.dart';
@@ -25,11 +24,9 @@ class ProductsGrid extends StatelessWidget {
         childAspectRatio: 3 / 2,
       ),
       itemBuilder: (_, index) {
-        final Product product = productList[index];
-
         return ChangeNotifierProvider.value(
           child: ProductItem(),
-          value: product,
+          value: productList[index],
         );
       },
       itemCount: productList.length,
