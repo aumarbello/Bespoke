@@ -10,6 +10,7 @@ class Products with ChangeNotifier {
   final String userId;
   final List<Product> _items;
   final List<Product> _searchResults = [];
+  final List<Product> _purchasedProducts = [];
 
   Products(this.token, this.userId, this._items);
 
@@ -41,8 +42,6 @@ class Products with ChangeNotifier {
         return;
       }
 
-      print(response.body);
-
       url =
           "https://bespoke-a3afd.firebaseio.com/userFavourites/$userId.json?auth=$token";
       final favResponse = await http.get(url);
@@ -66,37 +65,6 @@ class Products with ChangeNotifier {
       print(error);
       throw error;
     }
-  }
-
-  void searchProducts(String query) async {
-    final String queryUrl = 'orderBy="title"&equalTo="$query"';
-    final url =
-        "https://bespoke-a3afd.firebaseio.com/products.json?auth=$token&$queryUrl";
-
-    _searchResults.clear();
-
-    final response = await http.get(url);
-    final Map<String, dynamic> responseMap = json.decode(response.body);
-
-    print(response.body);
-
-    responseMap.forEach(
-      (productId, productData) {
-        final product = Product(
-          id: productId,
-          title: productData["title"],
-          description: productData["description"],
-          imageUrl: productData["imageUrl"],
-          price: productData["price"],
-        );
-
-        _searchResults.add(product);
-        _items.removeWhere((item) => item.id == product.id);
-        _items.add(product);
-      },
-    );
-
-    notifyListeners();
   }
 
   Future<void> insertOrUpdate(Product product) async {
@@ -128,6 +96,43 @@ class Products with ChangeNotifier {
     }
   }
 
+  Future<List<Product>> fetchPurchasingHistory() async {
+    if(_items.isEmpty) {
+      await fetchAndSaveData();
+
+      if(_items.isEmpty) {
+        return [];
+      }
+    }
+
+    final url =
+        "https://bespoke-a3afd.firebaseio.com/history/$userId.json?auth=$token";
+
+    final history = await http.get(url);
+
+    if(history == null || history.body == null || history.body == "null") {
+      print("History response is null");
+      return [];
+    }
+
+    final data = json.decode(history.body);
+
+    try {
+      final productIds = data as List<dynamic>;
+      _purchasedProducts.clear();
+
+      _purchasedProducts.addAll(
+        _items.where(
+              (product) => productIds.contains(product.id),
+        ),
+      );
+    } catch (error) {
+      print(error);
+    }
+
+    return _purchasedProducts;
+  }
+
   Future<void> deleteProduct(String productId) async {
     final url =
         "https://bespoke-a3afd.firebaseio.com/products/$productId.json?auth=$token";
@@ -146,6 +151,35 @@ class Products with ChangeNotifier {
         throw HttpException("Failed to delete product");
       } else {}
     });
+  }
+
+  void searchProducts(String query) async {
+    final String queryUrl = 'orderBy="title"&equalTo="$query"';
+    final url =
+        "https://bespoke-a3afd.firebaseio.com/products.json?auth=$token&$queryUrl";
+
+    _searchResults.clear();
+
+    final response = await http.get(url);
+    final Map<String, dynamic> responseMap = json.decode(response.body);
+
+    responseMap.forEach(
+      (productId, productData) {
+        final product = Product(
+          id: productId,
+          title: productData["title"],
+          description: productData["description"],
+          imageUrl: productData["imageUrl"],
+          price: productData["price"],
+        );
+
+        _searchResults.add(product);
+        _items.removeWhere((item) => item.id == product.id);
+        _items.add(product);
+      },
+    );
+
+    notifyListeners();
   }
 
   String encodeProduct(Product product) {

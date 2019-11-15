@@ -1,4 +1,5 @@
 import 'package:bespoke/screens/order_screen.dart';
+import 'package:bespoke/screens/product_history.dart';
 import 'package:bespoke/screens/product_overview_screen.dart';
 import 'package:bespoke/screens/user_product_screen.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,11 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
       "title": "Manage Products",
       "page": UserProductScreen(),
       "icon": Icons.edit,
+    },
+    {
+      "title": "History",
+      "page": ProductHistoryScreen(),
+      "icon": Icons.shopping_cart,
     }
   ];
 
@@ -38,6 +44,7 @@ class _BottomNavigationScreenState extends State<BottomNavigationScreen> {
           selectedItemColor: Theme.of(context).accentColor,
           unselectedItemColor: Colors.white,
           backgroundColor: Theme.of(context).primaryColor,
+          type: BottomNavigationBarType.fixed,
           items: _pages
               .map(
                 (entry) => BottomNavigationBarItem(

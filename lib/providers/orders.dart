@@ -17,7 +17,8 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> fetchAndSaveOrders() async {
-    final url = "https://bespoke-a3afd.firebaseio.com/orders/$userId.json?auth=$token";
+    final url =
+        "https://bespoke-a3afd.firebaseio.com/orders/$userId.json?auth=$token";
     final response = await http.get(url);
     final Map<String, dynamic> responseData = json.decode(response.body);
     if (responseData == null) {
@@ -44,11 +45,10 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> addOrder(
-    List<CartItem> products,
-    double amount,
-  ) async {
+      List<String> productIds, List<CartItem> products, double amount) async {
     final time = DateTime.now();
-    final url = "https://bespoke-a3afd.firebaseio.com/orders/$userId.json?auth=$token";
+    var url =
+        "https://bespoke-a3afd.firebaseio.com/orders/$userId.json?auth=$token";
 
     final response = await http.post(url,
         body: encodeOrderItem(
@@ -64,6 +64,28 @@ class Orders with ChangeNotifier {
           products: products,
           orderTime: time,
         ));
+
+    url =
+        "https://bespoke-a3afd.firebaseio.com/history/$userId.json?auth=$token";
+    final existingHistory = await http.get(url);
+    if (existingHistory == null ||
+        existingHistory.body == null ||
+        existingHistory.body == "null") return;
+
+    final historyData = json.decode(existingHistory.body);
+
+    try {
+      final idList = historyData as List<dynamic>;
+      idList.forEach((id) {
+        if (!productIds.contains(id)) {
+          productIds.add(id);
+        }
+      });
+    } catch (error) {
+      print(error);
+    }
+
+    await http.put(url, body: json.encode(productIds));
 
     notifyListeners();
   }
